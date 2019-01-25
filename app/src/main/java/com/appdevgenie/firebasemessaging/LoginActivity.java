@@ -12,19 +12,25 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import com.appdevgenie.firebasemessaging.Models.User;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 
 public class LoginActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener {
 
     public static final String TAG = "LoginActivity";
-    private static final int ERROR_DIALOG_REQUEST = 9001;
+    //private static final int ERROR_DIALOG_REQUEST = 9001;
 
     private FirebaseAuth.AuthStateListener authStateListener;
 
@@ -82,11 +88,16 @@ public class LoginActivity extends AppCompatActivity implements CompoundButton.O
 
     private void registerUser() {
 
-        String email = etEmail.getText().toString().trim();
+        final String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
         if (TextUtils.isEmpty(email)) {
             //Toast.makeText(context, R.string.enter_email, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if(!isEmailValid(email)){
+
             return;
         }
 
@@ -102,11 +113,57 @@ public class LoginActivity extends AppCompatActivity implements CompoundButton.O
                 .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
-                        progressBar.setVisibility(View.VISIBLE);
+                        progressBar.setVisibility(View.INVISIBLE);
                         /*Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                         startActivity(intent);*/
+
+                        User user = new User();
+                        user.setName(email.substring(0, email.indexOf("@")));
+                        user.setUser_id(FirebaseAuth.getInstance().getCurrentUser().getUid());
+
+                        FirebaseDatabase.getInstance().getReference()
+                                .child("users")
+                                .child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                                .setValue(user)
+                                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Void> task) {
+                                        FirebaseAuth.getInstance().signOut();
+
+                                        tbRegister.setChecked(false);
+                                        //redirect the user to the login screen
+                                        //redirectLoginScreen();
+                                    }
+                                }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                //Toast.makeText(RegisterActivity.this, "something went wrong.", Toast.LENGTH_SHORT).show();
+                                FirebaseAuth.getInstance().signOut();
+
+                                //redirect the user to the login screen
+                                //redirectLoginScreen();
+                            }
+                        });
+
+                        FirebaseInstanceId.getInstance().getInstanceId().addOnSuccessListener(new OnSuccessListener<InstanceIdResult>() {
+                            @Override
+                            public void onSuccess(InstanceIdResult instanceIdResult) {
+                                String token = instanceIdResult.getToken();
+
+                                DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
+                                reference.child("users")
+                                        .child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                                        .child("token")
+                                        .setValue(token);
+
+                            }
+                        });
                     }
                 });
+    }
+
+    public static boolean isEmailValid(CharSequence email) {
+        return email != null && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches();
     }
 
     @Override
@@ -144,8 +201,11 @@ public class LoginActivity extends AppCompatActivity implements CompoundButton.O
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         progressBar.setVisibility(View.INVISIBLE);
-                        /*Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                        startActivity(intent);*/
+                        /*Intent intent = new Intent(LoginActivity.this, UserListActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        //intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        startActivity(intent);
+                        finish();*/
                     }
                 });
     }
@@ -163,6 +223,7 @@ public class LoginActivity extends AppCompatActivity implements CompoundButton.O
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     //intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intent);
+                    finish();
                 }
             }
         };

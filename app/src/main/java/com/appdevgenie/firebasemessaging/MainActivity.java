@@ -1,9 +1,8 @@
 package com.appdevgenie.firebasemessaging;
 
-import android.content.Intent;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -17,7 +16,12 @@ import com.appdevgenie.firebasemessaging.Models.MessageData;
 import com.appdevgenie.firebasemessaging.Utils.FirebaseCloudMessengerAPI;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 
@@ -35,7 +39,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MainActivity extends AppCompatActivity {
 
     private static final String BASE_URL = "https://fcm.googleapis.com/fcm/";
-    private static final String SERVER_KEY = "";
+    //private static final String SERVER_KEY = "";
     private static final String TAG = "MainActivity";
 
     //private FirebaseAuth.AuthStateListener authStateListener;
@@ -45,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText etMessage;
     private Button bSend;
     private Set<String> tokens;
-
+    private String serverKey;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,6 +84,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("newToken", instanceIdResult.getToken());
             }
         });
+
+        getServerKey();
     }
 
     @Override
@@ -138,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
         //attach the headers
         HashMap<String, String> headers = new HashMap<>();
         headers.put("Content-Type", "application/json");
-        headers.put("Authorization", "key=" + SERVER_KEY);
+        headers.put("Authorization", "key=" + serverKey);
 
         for(String token : tokens){
 
@@ -149,22 +155,44 @@ public class MainActivity extends AppCompatActivity {
             //data.setData_type(getString(R.string.data_type_admin_broadcast));
             FirebaseCloudMessage firebaseCloudMessage = new FirebaseCloudMessage();
             firebaseCloudMessage.setMessageData(data);
-            //firebaseCloudMessage.setTo();
+            firebaseCloudMessage.setTo(token);
 
             Call<ResponseBody> call = firebaseCloudMessengerAPI.send(headers, firebaseCloudMessage);
 
             call.enqueue(new Callback<ResponseBody>() {
                 @Override
-                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                public void onResponse(@NonNull Call<ResponseBody> call, @NonNull Response<ResponseBody> response) {
                     Log.d(TAG, "onResponse: Server Response: "  + response.toString());
                 }
 
                 @Override
-                public void onFailure(Call<ResponseBody> call, Throwable t) {
+                public void onFailure(@NonNull Call<ResponseBody> call, @NonNull Throwable t) {
                     Log.e(TAG, "onFailure: Unable to send the message." + t.getMessage() );
                 }
             });
         }
+    }
+
+    private void getServerKey(){
+        Log.d(TAG, "getServerKey: retrieving server key.");
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
+
+        Query query = reference.child("server")
+                .orderByValue();
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Log.d(TAG, "onDataChange: got the server key.");
+                DataSnapshot singleSnapshot = dataSnapshot.getChildren().iterator().next();
+                serverKey = singleSnapshot.getValue().toString();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
     /*@Override
