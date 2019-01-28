@@ -24,12 +24,14 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder>{
     public class ViewHolder extends RecyclerView.ViewHolder{
 
         public TextView name;
+        private TextView token;
 
         public ViewHolder(View itemView) {
             super(itemView);
-            name = (TextView) itemView.findViewById(R.id.name);
+            name = itemView.findViewById(R.id.tvUserName);
+            token = itemView.findViewById(R.id.tvUserToken);
 
-            itemView.setOnClickListener(new View.OnClickListener() {
+            /*itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     Log.d(TAG, "onClick: selected employee: " + mUsers.get(getAdapterPosition()));
@@ -37,7 +39,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder>{
                     //open a dialog for inserting a message into the database
                     ((UserListActivity)mContext).openMessageDialog(mUsers.get(getAdapterPosition()).getUser_id());
                 }
-            });
+            });*/
         }
     }
 
@@ -52,7 +54,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder>{
         LayoutInflater inflater = LayoutInflater.from(context);
 
         //inflate the custom layout
-        View view = inflater.inflate(R.layout.layout_user_listitem, parent, false);
+        View view = inflater.inflate(R.layout.listitem_user, parent, false);
 
         //return a new holder instance
         return new ViewHolder(view);
@@ -61,6 +63,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder>{
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) throws NullPointerException{
         holder.name.setText(mUsers.get(position).getName());
+        holder.token.setText(mUsers.get(position).getUser_id());
     }
 
 

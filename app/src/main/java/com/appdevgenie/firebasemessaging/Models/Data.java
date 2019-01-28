@@ -1,15 +1,15 @@
 package com.appdevgenie.firebasemessaging.Models;
 
-public class MessageData {
+public class Data {
 
     private String title;
     private String message;
     private String data_type;
 
-    public MessageData() {
+    public Data() {
     }
 
-    public MessageData(String title, String message, String data_type) {
+    public Data(String title, String message, String data_type) {
         this.title = title;
         this.message = message;
         this.data_type = data_type;
@@ -41,7 +41,7 @@ public class MessageData {
 
     @Override
     public String toString() {
-        return "MessageData{" +
+        return "Data{" +
                 "title='" + title + '\'' +
                 ", message='" + message + '\'' +
                 ", data_type='" + data_type + '\'' +

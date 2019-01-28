@@ -22,6 +22,9 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import static com.appdevgenie.firebasemessaging.Utils.Constants.DB_MESSAGES;
+import static com.appdevgenie.firebasemessaging.Utils.Constants.DB_USERS;
+
 public class MessageDialog extends DialogFragment {
 
     private static final String TAG = "MessageDialog";
@@ -70,7 +73,7 @@ public class MessageDialog extends DialogFragment {
 
                     //insert the new message
                     reference
-                            .child("messages")
+                            .child(DB_MESSAGES)
                             .child(mUserId)
                             .child(reference.push().getKey())
                             .setValue(message);

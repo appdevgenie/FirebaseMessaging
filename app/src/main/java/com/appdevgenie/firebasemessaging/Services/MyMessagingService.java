@@ -20,6 +20,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import static com.appdevgenie.firebasemessaging.Utils.Constants.DB_TOKEN;
+import static com.appdevgenie.firebasemessaging.Utils.Constants.DB_USERS;
+
 public class MyMessagingService extends FirebaseMessagingService {
 
     public static final String TAG = "MessagingService";
@@ -28,13 +31,27 @@ public class MyMessagingService extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
 
+        	String notificationBody = "";
+        	String notificationTitle = "";
+        	String notificationData = "";
+        	try{
+        	   notificationData = remoteMessage.getData().toString();
+        	   notificationTitle = remoteMessage.getData().get("title");
+        	   notificationBody = remoteMessage.getData().get("message");
+        	}catch (NullPointerException e){
+        	   Log.e(TAG, "onMessageReceived: NullPointerException: " + e.getMessage() );
+        	}
+        	Log.d(TAG, "onMessageReceived: data: " + notificationData);
+        	Log.d(TAG, "onMessageReceived: notification body: " + notificationBody);
+        	Log.d(TAG, "onMessageReceived: notification title: " + notificationTitle);
+
         Log.d(TAG, "From: " + remoteMessage.getFrom());
 
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
             Log.d(TAG, "Message data payload: " + remoteMessage.getData());
 
-            //sendBroadcastNotification(remoteMessage.getData().get("title"), remoteMessage.getData().get("message"));
+            sendBroadcastNotification(remoteMessage.getData().get("title"), remoteMessage.getData().get("message"));
 
         }
 
@@ -80,7 +97,9 @@ public class MyMessagingService extends FirebaseMessagingService {
         NotificationManager mNotificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-        mNotificationManager.notify(1, builder.build());
+        if (mNotificationManager != null) {
+            mNotificationManager.notify(1, builder.build());
+        }
 
     }
 
@@ -95,9 +114,9 @@ public class MyMessagingService extends FirebaseMessagingService {
 
         if(firebaseUser != null){
             DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
-            reference.child("users")
+            reference.child(DB_USERS)
                     .child(FirebaseAuth.getInstance().getCurrentUser().getUid())
-                    .child("token")
+                    .child(DB_TOKEN)
                     .setValue(token);
         }
     }

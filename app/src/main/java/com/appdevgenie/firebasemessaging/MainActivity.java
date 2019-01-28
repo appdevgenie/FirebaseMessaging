@@ -3,6 +3,8 @@ package com.appdevgenie.firebasemessaging;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -11,8 +13,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.appdevgenie.firebasemessaging.Adapters.UserAdapter;
 import com.appdevgenie.firebasemessaging.Models.FirebaseCloudMessage;
-import com.appdevgenie.firebasemessaging.Models.MessageData;
+import com.appdevgenie.firebasemessaging.Models.Data;
+import com.appdevgenie.firebasemessaging.Models.User;
 import com.appdevgenie.firebasemessaging.Utils.FirebaseCloudMessengerAPI;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -25,6 +29,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -35,6 +40,9 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+
+import static com.appdevgenie.firebasemessaging.Utils.Constants.DB_SERVER;
+import static com.appdevgenie.firebasemessaging.Utils.Constants.DB_USERS;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -50,6 +58,9 @@ public class MainActivity extends AppCompatActivity {
     private Button bSend;
     private Set<String> tokens;
     private String serverKey;
+    private RecyclerView recyclerView;
+    private ArrayList<User> userList;
+    private UserAdapter userAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +77,13 @@ public class MainActivity extends AppCompatActivity {
     private void init() {
 
         tokens = new HashSet<>();
+        userList = new ArrayList<>();
+
+        recyclerView = findViewById(R.id.rvUsers);
+        userAdapter = new UserAdapter(this, userList);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setAdapter(userAdapter);
 
         etTitle = findViewById(R.id.etTitle);
         etMessage = findViewById(R.id.etMessage);
@@ -86,6 +104,59 @@ public class MainActivity extends AppCompatActivity {
         });
 
         getServerKey();
+        getUserList();
+        getTokens();
+    }
+
+
+    private void getUserList() throws NullPointerException{
+        Log.d(TAG, "getUserList: getting a list of all users");
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
+
+        Query query = reference.child(DB_USERS);
+
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                for(DataSnapshot snapshot: dataSnapshot.getChildren()){
+                    User user = snapshot.getValue(User.class);
+                    Log.d(TAG, "onDataChange: found a user: " + user.getName());
+                    userList.add(user);
+                }
+                userAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void getTokens() {
+        Log.d(TAG, "getUserTokens: getting a list of all user tokens");
+
+        tokens.clear();
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
+        Query query = reference.child(DB_USERS);
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for(DataSnapshot snapshot : dataSnapshot.getChildren()){
+                    String token = snapshot.getValue(User.class).getToken();
+                    Log.d(TAG, "onDataChange: got a token for user named: "
+                            + snapshot.getValue(User.class).getName());
+                    tokens.add(token);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
     @Override
@@ -148,13 +219,13 @@ public class MainActivity extends AppCompatActivity {
 
         for(String token : tokens){
 
-            //Log.d(TAG, "sendMessageToDepartment: sending to token: " + token);
-            MessageData data = new MessageData();
+            Log.d(TAG, "sendMessage: sending to token: " + token);
+            Data data = new Data();
             data.setMessage(message);
             data.setTitle(title);
             //data.setData_type(getString(R.string.data_type_admin_broadcast));
             FirebaseCloudMessage firebaseCloudMessage = new FirebaseCloudMessage();
-            firebaseCloudMessage.setMessageData(data);
+            firebaseCloudMessage.setData(data);
             firebaseCloudMessage.setTo(token);
 
             Call<ResponseBody> call = firebaseCloudMessengerAPI.send(headers, firebaseCloudMessage);
@@ -178,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
 
         DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
 
-        Query query = reference.child("server")
+        Query query = reference.child(DB_SERVER)
                 .orderByValue();
         query.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override

@@ -3,14 +3,14 @@ package com.appdevgenie.firebasemessaging.Models;
 public class FirebaseCloudMessage {
 
     private String to;
-    private MessageData messageData;
+    private Data data;
 
     public FirebaseCloudMessage() {
     }
 
-    public FirebaseCloudMessage(String to, MessageData messageData) {
+    public FirebaseCloudMessage(String to, Data data) {
         this.to = to;
-        this.messageData = messageData;
+        this.data = data;
     }
 
     public String getTo() {
@@ -21,19 +21,19 @@ public class FirebaseCloudMessage {
         this.to = to;
     }
 
-    public MessageData getMessageData() {
-        return messageData;
+    public Data getData() {
+        return data;
     }
 
-    public void setMessageData(MessageData messageData) {
-        this.messageData = messageData;
+    public void setData(Data data) {
+        this.data = data;
     }
 
     @Override
     public String toString() {
         return "FirebaseCloudMessage{" +
                 "to='" + to + '\'' +
-                ", messageData=" + messageData +
+                ", data=" + data +
                 '}';
     }
 }

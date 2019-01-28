@@ -26,6 +26,10 @@ import com.google.firebase.iid.FirebaseInstanceId;
 
 import java.util.ArrayList;
 
+import static com.appdevgenie.firebasemessaging.Utils.Constants.DB_TOKEN;
+import static com.appdevgenie.firebasemessaging.Utils.Constants.DB_USERS;
+import static com.appdevgenie.firebasemessaging.Utils.Constants.DB_USER_ID;
+
 public class UserListActivity extends AppCompatActivity {
 
     private static final String TAG = "UserListActivity";
@@ -64,7 +68,7 @@ public class UserListActivity extends AppCompatActivity {
         MessageDialog dialog = new MessageDialog();
 
         Bundle bundle = new Bundle();
-        bundle.putString("user_id", userId);
+        bundle.putString(DB_USER_ID, userId);
         dialog.setArguments(bundle);
         dialog.show(getSupportFragmentManager(), "dialog");
     }
@@ -73,11 +77,11 @@ public class UserListActivity extends AppCompatActivity {
         Log.d(TAG, "getUserList: getting a list of all users");
         DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
 
-        Query query = reference.child("users");
+        Query query = reference.child(DB_USERS);
 
         query.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
                 for(DataSnapshot snapshot: dataSnapshot.getChildren()){
                     User user = snapshot.getValue(User.class);
@@ -105,9 +109,9 @@ public class UserListActivity extends AppCompatActivity {
     private void sendRegistrationToServer(String token) {
         Log.d(TAG, "sendRegistrationToServer: sending token to server: " + token);
         DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
-        reference.child("users")
+        reference.child(DB_USERS)
                 .child(FirebaseAuth.getInstance().getCurrentUser().getUid())
-                .child("token")
+                .child(DB_TOKEN)
                 .setValue(token);
     }
 
@@ -127,7 +131,6 @@ public class UserListActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu, menu);
-
         return true;
     }
 
